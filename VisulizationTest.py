@@ -11,10 +11,15 @@ class Visualization2D:
         self.csvFile = None
 
 
+    def __clearUpFile(self):
+        self.csvFile.drop(["LICENSE", "pom.xml"], axis = 1, inplace=True)
+
+
     def readFile(self, fileName):
         '''data can only be read from csv file for now'''
         self.csvFile = pd.read_csv(fileName, index_col = 0)
         self.csvFile.fillna(0, inplace= True)
+        self.__clearUpFile()
 
 
 
@@ -41,7 +46,6 @@ class Visualization2D:
         return updateNodes, edges
 
 
-
     def drawHeatmap(self,fileName):
         self.readFile(fileName)
         '''log the value to enhance the contrast'''
@@ -55,12 +59,14 @@ class Visualization2D:
         fileList = list(self.csvFile.columns.values)
         peopleList = list(self.csvFile.index.values)
         data = list()
+        print("drawing heat map")
         for file in fileList:
             temp = list()
             for people in peopleList:
                 temp.append(self.csvFile[file][people])
             data.append(temp)
-        print(self.csvFile)
+        #print(self.csvFile)
+        print("succeed")
         figure = plt.figure();
         ax = figure.add_subplot(111)
         ax.set_yticks(range(len(fileList)))
@@ -111,12 +117,50 @@ class Visualization2D:
         plt.show()
 
 
+    def drawBrokenLineByCop(self, fileName):
+        self.readFile(fileName)
+        allPeople = list(self.csvFile.index.values)
+        yAxis = list()
+        xAxis = list(range(1,21))
+        nodes = list()
+        print("drawing broken line plot...")
+        for k in range(1, 21):
+            for i in range(0, len(allPeople)):
+                addI = False
+                for j in range(i + 1, len(allPeople)):
+                    count = 0
+                    for file in self.csvFile.columns.values:
+                        if (self.csvFile[file][allPeople[j]] > 0 and
+                                self.csvFile[file][allPeople[i]] > 0):
+                            count += 1
+                    if count >= k:
+                        if not addI:
+                            nodes.append(allPeople[i])
+                            addI = True
+                        nodes.append(allPeople[j])
+                clearNodes = set(nodes)
+                nodes = list(clearNodes)
+            yAxis.append(len(nodes))
+            allPeople = list(nodes)
+            nodes = list()
+
+        print("succeed!")
+        print(yAxis)
+        print(xAxis)
+        plt.plot(xAxis, yAxis,'s-' ,color = 'g')
+        plt.xticks(range(1,21), rotation = 45)
+        plt.yticks(range(0,max(yAxis) + 1))
+        plt.xlabel("cooperating files")
+        plt.ylabel("amount of people")
+        plt.show()
+
 
 v =Visualization2D()
 #v.drawHeatmap('Data/testData.csv')
-v.drawHeatmap('Data/alluxio-20h50w.csv')
-v.drawCoreNetWork('Data/alluxio-20h50w.csv')
-v.drawOverviewNetWork('Data/alluxio.csv')
+#v.drawHeatmap('Data/alluxio-20h50w.csv')
+v.drawBrokenLineByCop("Data/alluxio-20h50w.csv")
+#v.drawCoreNetWork('Data/alluxio-20h50w.csv')
+#v.drawOverviewNetWork('Data/alluxio.csv')
 
 
 
